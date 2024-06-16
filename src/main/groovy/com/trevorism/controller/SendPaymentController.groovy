@@ -36,7 +36,7 @@ class SendPaymentController {
     @Tag(name = "Payment Operations")
     @Operation(summary = "Create a new Stripe Payment Session")
     @Post(value = "/session", produces = MediaType.APPLICATION_JSON, consumes = MediaType.APPLICATION_JSON)
-    Map createSession(@Body PaymentRequest paymentRequest, Authentication authentication) {
+    Map createSession(@Body PaymentRequest paymentRequest, Optional<Authentication> authentication) {
         if (paymentRequest.dollars < 0.99) {
             throw new RuntimeException("Unable to process; insufficient funds for payment")
         }
@@ -61,10 +61,10 @@ class SendPaymentController {
                 .setCancelUrl(paymentRequest.failureCallbackUrl)
                 .addLineItem(lineItem)
 
-        if (authentication?.getAttributes()?.get("id")) {
+        if (authentication.orElse(null)?.getAttributes()?.get("id")) {
             builder.putMetadata("userId", authentication.getAttributes().get("id"))
         }
-        if (authentication?.getAttributes()?.get("tenant")) {
+        if (authentication.orElse(null)?.getAttributes()?.get("tenant")) {
             builder.putMetadata("tenantId", authentication.getAttributes().get("tenant"))
         }
 

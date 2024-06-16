@@ -5,12 +5,6 @@ micronaut:
     http-to-https-redirect: true
     cors:
       enabled: true
-      configurations:
-        web:
-          allowed-origins: "*"
-          allowed-methods: "POST,OPTIONS"
-          allowed-headers: "*"
-          exposed-headers: "*"
   security:
     enabled: true
     redirect:

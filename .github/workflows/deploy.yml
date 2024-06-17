@@ -26,6 +26,8 @@ jobs:
       CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
       SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
       API_KEY: ${{ secrets.API_KEY }}
+      API_SECRET: ${{ secrets.API_SECRET }}
+      API_SECRET_2: ${{ secrets.API_SECRET_2 }}
 
   call-accept-after:
     uses: trevorism/actions-workflows/.github/workflows/accept.yml@master

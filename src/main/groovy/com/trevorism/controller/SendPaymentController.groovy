@@ -31,8 +31,12 @@ import org.slf4j.LoggerFactory
 class SendPaymentController {
 
     private static final Logger log = LoggerFactory.getLogger(SendPaymentController)
+    private PropertiesProvider propertiesProvider = new ClasspathBasedPropertiesProvider()
 
-    //https://github.com/trevorism/homepage/commit/4bebfab38ff951929b108142b0eb83c4c4f6f4bd#diff-75357f6ca746c7115c917f3c500ff2ac0cbdcd55ba78cd606da2feff13a931a4
+    SendPaymentController() {
+        Stripe.apiKey = propertiesProvider.getProperty("apiKey")
+    }
+
     @Tag(name = "Payment Operations")
     @Operation(summary = "Create a new Stripe Payment Session")
     @Post(value = "/session", produces = MediaType.APPLICATION_JSON, consumes = MediaType.APPLICATION_JSON)
@@ -40,8 +44,6 @@ class SendPaymentController {
         if (paymentRequest.dollars < 0.99) {
             throw new RuntimeException("Unable to process; insufficient funds for payment")
         }
-        PropertiesProvider propertiesProvider = new ClasspathBasedPropertiesProvider()
-        Stripe.apiKey = propertiesProvider.getProperty("apiKey")
 
         SessionCreateParams.LineItem.PriceData.ProductData productData = SessionCreateParams.LineItem.PriceData.ProductData.builder().setName(paymentRequest.name).build()
         SessionCreateParams.LineItem.PriceData priceData = SessionCreateParams.LineItem.PriceData.builder()
@@ -74,11 +76,25 @@ class SendPaymentController {
 
     @Tag(name = "Payment Operations")
     @Operation(summary = "Handle Stripe payment callback")
-    @Post(value = "/webhook", produces = MediaType.APPLICATION_JSON, consumes = MediaType.APPLICATION_JSON)
-    Map processStripeEvent(@Body StripeCallback callback, HttpRequest<?> request) {
+    @Post(value = "/webhook", produces = MediaType.APPLICATION_JSON)
+    Map processStripeEvent(HttpRequest<String> request) {
         Gson gson = new Gson()
+        String payload = request.getBody(String.class).orElseThrow { new RuntimeException("Unable to process; no payload found") }
+        String endpointSecret = propertiesProvider.getProperty("apiSecret")
+        String sigHeader = request.getHeaders().get("Stripe-Signature")
+
+        try{
+            Webhook.constructEvent(payload, sigHeader, endpointSecret)
+        }catch(Exception e){
+            log.error("Error verifying Stripe signature", e)
+            throw new RuntimeException("Unable to process; invalid signature")
+        }
+
+        StripeCallback stripeCallback = gson.fromJson(payload, StripeCallback)
+        String json = gson.toJson(stripeCallback)
+
         log.info("Send Payment webhook received")
-        log.info(gson.toJson(callback))
-        return [id: callback.id]
+        log.info(json)
+        return gson.fromJson(json, Map)
     }
 }

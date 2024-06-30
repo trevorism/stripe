@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import static com.stripe.param.checkout.SessionCreateParams.LineItem.PriceData.*
 
 @Controller("/api/subscription")
 class SubscriptionController {
@@ -41,10 +42,11 @@ class SubscriptionController {
         if (paymentRequest.dollars != 10.00) {
             throw new RuntimeException("Unable to process; insufficient funds for payment")
         }
-        SessionCreateParams.LineItem.PriceData.ProductData productData = SessionCreateParams.LineItem.PriceData.ProductData.builder().setName(paymentRequest.name).build()
-        SessionCreateParams.LineItem.PriceData priceData = SessionCreateParams.LineItem.PriceData.builder()
+        ProductData productData = ProductData.builder().setName(paymentRequest.name).build()
+        SessionCreateParams.LineItem.PriceData priceData = builder()
                 .setCurrency("usd")
                 .setUnitAmount((long) (paymentRequest.dollars * 100))
+                .setRecurring(new Recurring.Builder().setInterval(Recurring.Interval.MONTH).setIntervalCount(12).build())
                 .setProductData(productData)
                 .build()
         SessionCreateParams.LineItem lineItem = SessionCreateParams.LineItem.builder()

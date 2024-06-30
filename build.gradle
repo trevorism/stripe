@@ -51,7 +51,7 @@ dependencies {
     runtimeOnly("org.yaml:snakeyaml")
 
     implementation("jakarta.annotation:jakarta.annotation-api")
-    implementation 'io.projectreactor:reactor-core:3.6.5'
+    implementation 'io.projectreactor:reactor-core:3.6.7'
 
     implementation("io.swagger.core.v3:swagger-annotations")
     compileOnly("io.micronaut.openapi:micronaut-openapi"){
@@ -61,8 +61,8 @@ dependencies {
     runtimeOnly("ch.qos.logback:logback-classic")
 
     implementation 'com.google.code.gson:gson:2.11.0'
-    implementation 'com.stripe:stripe-java:25.12.0'
-    implementation 'com.trevorism:micronaut-utility-beans:1.4.0'
+    implementation 'com.stripe:stripe-java:26.1.0'
+    implementation 'com.trevorism:micronaut-utility-beans:1.5.0'
 
     testImplementation 'com.trevorism:test-result-events:0.3.0'
     acceptanceImplementation 'io.cucumber:cucumber-groovy:6.10.4'

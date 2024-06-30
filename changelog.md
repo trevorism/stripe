@@ -1,6 +1,6 @@
 ## 0.3.0
 
-Update dependencies.
+Update dependencies. Move from test to production stripe keys.
 
 ## 0.2.1
 

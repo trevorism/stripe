@@ -11,11 +11,11 @@ import com.trevorism.model.PaymentRequest
 import com.trevorism.model.StripeCallback
 import com.trevorism.secure.Roles
 import com.trevorism.secure.Secure
-import io.micronaut.core.annotation.Nullable
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
+import io.micronaut.http.annotation.Delete
 import io.micronaut.http.annotation.Post
 import io.micronaut.security.authentication.Authentication
 import io.swagger.v3.oas.annotations.Operation
@@ -32,7 +32,6 @@ class SubscriptionController {
     SubscriptionController() {
         Stripe.apiKey = propertiesProvider.getProperty("apiKey")
     }
-
 
     @Tag(name = "Subscription Operations")
     @Operation(summary = "Create a new Stripe Subscription")
@@ -70,6 +69,18 @@ class SubscriptionController {
         Session session = Session.create(builder.build())
         return [id: session.getId()]
     }
+
+    @Tag(name = "Subscription Operations")
+    @Operation(summary = "Remove a Stripe Subscription")
+    @Delete(value = "/", produces = MediaType.APPLICATION_JSON, consumes = MediaType.APPLICATION_JSON)
+    @Secure(Roles.USER)
+    Map deleteSubscription(Optional<Authentication> authentication) {
+
+        //Subscription subscription = Subscription.retrieve(subscriptionId);
+        //subscription.cancel()
+        throw new RuntimeException("Unable to process; subscription deletion not yet implemented")
+    }
+
 
     @Tag(name = "Subscription Operations")
     @Operation(summary = "Handle Stripe payment callback")

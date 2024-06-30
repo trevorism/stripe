@@ -46,7 +46,7 @@ class SubscriptionController {
         SessionCreateParams.LineItem.PriceData priceData = builder()
                 .setCurrency("usd")
                 .setUnitAmount((long) (paymentRequest.dollars * 100))
-                .setRecurring(new Recurring.Builder().setInterval(Recurring.Interval.MONTH).setIntervalCount(12).build())
+                .setRecurring(new Recurring.Builder().setInterval(Recurring.Interval.MONTH).setIntervalCount(1).build())
                 .setProductData(productData)
                 .build()
         SessionCreateParams.LineItem lineItem = SessionCreateParams.LineItem.builder()

@@ -1,3 +1,7 @@
+## 0.4.0
+
+Actually handle the stripe event by storing a billing event object.
+
 ## 0.3.0
 
 Update dependencies. Move from test to production stripe keys.

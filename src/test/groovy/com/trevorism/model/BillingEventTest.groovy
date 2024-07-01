@@ -1,10 +1,9 @@
-package com.trevorism.controller
+package com.trevorism.model
 
 import com.google.gson.Gson
-import com.trevorism.model.StripeCallbackEventDataObject
 import org.junit.jupiter.api.Test
 
-class StripeVerificationTest {
+class BillingEventTest {
 
     private static final String sampleEventOne = """{
     "id": "pi_3PSTceKUPlXay6LP0NNoiJsy",
@@ -582,11 +581,50 @@ class StripeVerificationTest {
   }"""
 
     @Test
-    void processEvent(){
+    void testSampleOne() {
+        Gson gson = new Gson()
+        StripeCallbackEventDataObject stripeCallback = gson.fromJson(sampleEventOne, StripeCallbackEventDataObject)
+        StripeCallbackEvent sce = new StripeCallbackEvent(data: new StripeCallbackEventData(object: stripeCallback))
+        BillingEvent billingEvent = BillingEvent.from(sce)
+        assert billingEvent != null
+        assert !billingEvent.userId
+        assert !billingEvent.tenantId
+        assert billingEvent.billingId == "pi_3PSTceKUPlXay6LP0NNoiJsy"
+        assert billingEvent.billingDate
+        assert billingEvent.billingAmount == 20.0d
+        assert billingEvent.billingCustomer == null
+        assert billingEvent.billingStatus == "succeeded"
+    }
+
+    @Test
+    void testSampleTwo(){
         Gson gson = new Gson()
         StripeCallbackEventDataObject stripeCallback = gson.fromJson(sampleEventTwo, StripeCallbackEventDataObject)
+        StripeCallbackEvent sce = new StripeCallbackEvent(data: new StripeCallbackEventData(object: stripeCallback))
+        BillingEvent billingEvent = BillingEvent.from(sce)
+        assert billingEvent != null
+        assert !billingEvent.userId
+        assert !billingEvent.tenantId
+        assert billingEvent.billingId == "pi_3PXVudKUPlXay6LP0fEuw854"
+        assert billingEvent.billingDate
+        assert billingEvent.billingAmount == 10.0d
+        assert billingEvent.billingCustomer == "cus_QOIVPo30vRL80c"
+        assert billingEvent.billingStatus == "succeeded"
+    }
 
-
-        println stripeCallback
+    @Test
+    void testSampleThree(){
+        Gson gson = new Gson()
+        StripeCallbackEventDataObject stripeCallback = gson.fromJson(sampleEventThree, StripeCallbackEventDataObject)
+        StripeCallbackEvent sce = new StripeCallbackEvent(data: new StripeCallbackEventData(object: stripeCallback))
+        BillingEvent billingEvent = BillingEvent.from(sce)
+        assert billingEvent != null
+        assert !billingEvent.userId
+        assert !billingEvent.tenantId
+        assert billingEvent.billingId == "pi_3PSeUoKUPlXay6LP16myN6Ch"
+        assert billingEvent.billingDate
+        assert billingEvent.billingAmount == 4.99d
+        assert billingEvent.billingCustomer == null
+        assert billingEvent.billingStatus == "succeeded"
     }
 }

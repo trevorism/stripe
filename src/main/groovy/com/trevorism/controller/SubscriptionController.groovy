@@ -8,9 +8,10 @@ import com.stripe.param.checkout.SessionCreateParams
 import com.trevorism.ClasspathBasedPropertiesProvider
 import com.trevorism.PropertiesProvider
 import com.trevorism.model.PaymentRequest
-import com.trevorism.model.StripeCallback
+import com.trevorism.model.StripeCallbackEvent
 import com.trevorism.secure.Roles
 import com.trevorism.secure.Secure
+import com.trevorism.service.BillingEventService
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Body
@@ -20,6 +21,7 @@ import io.micronaut.http.annotation.Post
 import io.micronaut.security.authentication.Authentication
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.inject.Inject
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import static com.stripe.param.checkout.SessionCreateParams.LineItem.PriceData.*
@@ -28,18 +30,20 @@ import static com.stripe.param.checkout.SessionCreateParams.LineItem.PriceData.*
 class SubscriptionController {
 
     private static final Logger log = LoggerFactory.getLogger(SubscriptionController)
-    private PropertiesProvider propertiesProvider = new ClasspathBasedPropertiesProvider()
 
-    SubscriptionController() {
-        Stripe.apiKey = propertiesProvider.getProperty("apiKey")
-    }
+    @Inject
+    private PropertiesProvider propertiesProvider
+
+    @Inject
+    BillingEventService billingEventService
 
     @Tag(name = "Subscription Operations")
     @Operation(summary = "Create a new Stripe Subscription")
     @Post(value = "/session", produces = MediaType.APPLICATION_JSON, consumes = MediaType.APPLICATION_JSON)
     @Secure(Roles.USER)
     Map createSession(@Body PaymentRequest paymentRequest, Optional<Authentication> authentication) {
-        if (paymentRequest.dollars != 10.00) {
+        Stripe.apiKey = propertiesProvider?.getProperty("apiKey")
+        if (paymentRequest.dollars != 10.00d) {
             throw new RuntimeException("Unable to process; insufficient funds for payment")
         }
         ProductData productData = ProductData.builder().setName(paymentRequest.name).build()
@@ -76,35 +80,12 @@ class SubscriptionController {
     @Operation(summary = "Remove a Stripe Subscription")
     @Delete(value = "/", produces = MediaType.APPLICATION_JSON, consumes = MediaType.APPLICATION_JSON)
     @Secure(Roles.USER)
-    Map deleteSubscription(Optional<Authentication> authentication) {
-
-        //Subscription subscription = Subscription.retrieve(subscriptionId);
-        //subscription.cancel()
-        throw new RuntimeException("Unable to process; subscription deletion not yet implemented")
-    }
-
-
-    @Tag(name = "Subscription Operations")
-    @Operation(summary = "Handle Stripe payment callback")
-    @Post(value = "/webhook", produces = MediaType.APPLICATION_JSON)
-    Map processStripeEvent(HttpRequest<String> request) {
-        Gson gson = new Gson()
-        String payload = request.getBody(String.class).orElseThrow { new RuntimeException("Unable to process; no payload found") }
-        String endpointSecret = propertiesProvider.getProperty("apiSecret2")
-        String sigHeader = request.getHeaders().get("Stripe-Signature")
-
-        try{
-            Webhook.constructEvent(payload, sigHeader, endpointSecret)
-        }catch(Exception e){
-            log.error("Error verifying Stripe signature", e)
-            throw new RuntimeException("Unable to process; invalid signature")
+    boolean deleteSubscription(Optional<Authentication> authentication) {
+        if (authentication.isPresent()) {
+            Stripe.apiKey = propertiesProvider?.getProperty("apiKey")
+            return billingEventService.cancelSubscription(authentication.get())
         }
-
-        StripeCallback stripeCallback = gson.fromJson(payload, StripeCallback)
-        String json = gson.toJson(stripeCallback)
-
-        log.info("Send Subscription received")
-        log.info(json)
-        return gson.fromJson(json, Map)
+        return false
     }
+
 }

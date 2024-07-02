@@ -53,11 +53,14 @@ class SendPaymentController {
                 .setCancelUrl(paymentRequest.failureCallbackUrl)
                 .addLineItem(lineItem)
 
+        log.debug("Adding metadata to stripe session..")
         if (authentication?.getAttributes()?.get("id")) {
-            builder.putMetadata("userId", authentication.getAttributes().get("id"))
+            builder.putMetadata("userId", authentication.getAttributes().get("id").toString())
+            log.debug("User metadata added ${authentication.getAttributes().get("id")}")
         }
         if (authentication?.getAttributes()?.get("tenant")) {
-            builder.putMetadata("tenantId", authentication.getAttributes().get("tenant"))
+            builder.putMetadata("tenantId", authentication.getAttributes().get("tenant").toString())
+            log.debug("Tenant metadata added ${authentication.getAttributes().get("tenant")}")
         }
 
         Session session = Session.create(builder.build())

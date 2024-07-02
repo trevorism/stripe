@@ -3,7 +3,6 @@ package com.trevorism.controller
 import com.stripe.Stripe
 import com.stripe.model.checkout.Session
 import com.stripe.param.checkout.SessionCreateParams
-import com.trevorism.ClasspathBasedPropertiesProvider
 import com.trevorism.PropertiesProvider
 import com.trevorism.model.PaymentRequest
 import io.micronaut.http.MediaType
@@ -29,9 +28,10 @@ class SendPaymentController {
     @Tag(name = "Payment Operations")
     @Operation(summary = "Create a new Stripe Payment Session")
     @Post(value = "/session", produces = MediaType.APPLICATION_JSON, consumes = MediaType.APPLICATION_JSON)
-    Map createSession(@Body PaymentRequest paymentRequest, Optional<Authentication> authentication) {
+    Map createSession(@Body PaymentRequest paymentRequest, Authentication authentication) {
         Stripe.apiKey = propertiesProvider.getProperty("apiKey")
         if (paymentRequest.dollars < 0.99) {
+            log.warn("Failed payment attempt of ${paymentRequest.dollars}")
             throw new RuntimeException("Unable to process; insufficient funds for payment")
         }
 
@@ -53,10 +53,10 @@ class SendPaymentController {
                 .setCancelUrl(paymentRequest.failureCallbackUrl)
                 .addLineItem(lineItem)
 
-        if (authentication.orElse(null)?.getAttributes()?.get("id")) {
+        if (authentication?.getAttributes()?.get("id")) {
             builder.putMetadata("userId", authentication.getAttributes().get("id"))
         }
-        if (authentication.orElse(null)?.getAttributes()?.get("tenant")) {
+        if (authentication?.getAttributes()?.get("tenant")) {
             builder.putMetadata("tenantId", authentication.getAttributes().get("tenant"))
         }
 

@@ -41,7 +41,7 @@ class SubscriptionController {
     @Operation(summary = "Create a new Stripe Subscription")
     @Post(value = "/session", produces = MediaType.APPLICATION_JSON, consumes = MediaType.APPLICATION_JSON)
     @Secure(Roles.USER)
-    Map createSession(@Body PaymentRequest paymentRequest, Optional<Authentication> authentication) {
+    Map createSession(@Body PaymentRequest paymentRequest, Authentication authentication) {
         Stripe.apiKey = propertiesProvider?.getProperty("apiKey")
         if (paymentRequest.dollars != 10.00d) {
             throw new RuntimeException("Unable to process; insufficient funds for payment")
@@ -65,10 +65,10 @@ class SubscriptionController {
                 .setCancelUrl(paymentRequest.failureCallbackUrl)
                 .addLineItem(lineItem)
 
-        if (authentication.orElse(null)?.getAttributes()?.get("id")) {
+        if (authentication?.getAttributes()?.get("id")) {
             builder.putMetadata("userId", authentication.getAttributes().get("id").toString())
         }
-        if (authentication.orElse(null)?.getAttributes()?.get("tenant")) {
+        if (authentication?.getAttributes()?.get("tenant")) {
             builder.putMetadata("tenantId", authentication.getAttributes().get("tenant").toString())
         }
 

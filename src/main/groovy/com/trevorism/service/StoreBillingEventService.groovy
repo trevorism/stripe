@@ -48,20 +48,20 @@ class StoreBillingEventService implements BillingEventService {
 
     private Repository<BillingEvent> createBillingEventRepository(String tenantId) {
         String token = getInternalToken(tenantId)
-        SecureHttpClient internalHttpClient = new SecureHttpClientBase(singletonClient, new ObtainTokenFromParameter(token)) { }
+        SecureHttpClient internalHttpClient = new SecureHttpClientBase(singletonClient, new ObtainTokenFromParameter(token)) {}
         Repository<BillingEvent> repository = new FastDatastoreRepository<>(BillingEvent.class, internalHttpClient)
         return repository
     }
 
     @Override
     boolean cancelSubscription(Authentication authentication) {
-        Stripe.apiKey = propertiesProvider.getProperty("apiKey")
-        String tenantId = authentication?.attributes?.get("tenant")
-        String userId = authentication.attributes.get("id")
-        Repository<BillingEvent> repository = createBillingEventRepository(tenantId)
-        ComplexFilter complexFilter = new FilterBuilder().addFilter(new SimpleFilter("userId", FilterConstants.OPERATOR_EQUAL, userId)).build()
-        List<BillingEvent> billingEventList = repository.filter(complexFilter)
         try {
+            Stripe.apiKey = propertiesProvider.getProperty("apiKey")
+            String tenantId = authentication?.attributes?.get("tenant")
+            String userId = authentication?.attributes?.get("id")
+            Repository<BillingEvent> repository = createBillingEventRepository(tenantId)
+            ComplexFilter complexFilter = new FilterBuilder().addFilter(new SimpleFilter("userId", FilterConstants.OPERATOR_EQUAL, userId)).build()
+            List<BillingEvent> billingEventList = repository.filter(complexFilter)
             if (billingEventList) {
                 Subscription subscription = Subscription.retrieve(billingEventList[0].billingCustomer)
                 subscription.cancel()
@@ -75,8 +75,7 @@ class StoreBillingEventService implements BillingEventService {
 
     private String getInternalToken(String tenantId) {
         try {
-            SecureHttpClient secureHttpClient = new SecureHttpClientBase(singletonClient, new ObtainTokenFromAuthServiceFromPropertiesFile()) {
-            }
+            SecureHttpClient secureHttpClient = new SecureHttpClientBase(singletonClient, new ObtainTokenFromAuthServiceFromPropertiesFile()) {}
             String subject = propertiesProvider.getProperty("clientId")
             InternalTokenRequest tokenRequest = new InternalTokenRequest(subject: subject, tenantId: tenantId)
             return secureHttpClient.post("https://auth.trevorism.com/token/internal", gson.toJson(tokenRequest))

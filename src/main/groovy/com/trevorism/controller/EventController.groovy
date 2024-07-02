@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory
 class EventController {
 
     private static final Logger log = LoggerFactory.getLogger(EventController)
+    private Gson gson = new Gson()
 
     @Inject
     private PropertiesProvider propertiesProvider
@@ -31,18 +32,9 @@ class EventController {
     @Operation(summary = "Handle Stripe payment callback")
     @Post(value = "/webhook", produces = MediaType.APPLICATION_JSON)
     boolean processStripeEvent(HttpRequest<String> request) {
-        Gson gson = new Gson()
         Stripe.apiKey = propertiesProvider?.getProperty("apiKey")
         String payload = request.getBody(String.class).orElseThrow { new RuntimeException("Unable to process; no payload found") }
-        String endpointSecret = propertiesProvider.getProperty("apiSecret")
-        String sigHeader = request.getHeaders().get("Stripe-Signature")
-
-        try{
-            Webhook.constructEvent(payload, sigHeader, endpointSecret)
-        }catch(Exception e){
-            log.error("Error verifying Stripe signature", e)
-            throw new RuntimeException("Unable to process; invalid signature")
-        }
+        validateStripeEvent(request, payload)
 
         StripeCallbackEvent stripeCallback = gson.fromJson(payload, StripeCallbackEvent)
         if(stripeCallback?.data?.object?.object != "payment_intent"){
@@ -53,5 +45,17 @@ class EventController {
         BillingEvent billingEvent = BillingEvent.from(stripeCallback)
         billingEventService.processBillingEvent(billingEvent)
         return true
+    }
+
+    private void validateStripeEvent(HttpRequest<String> request, String payload) {
+        String endpointSecret = propertiesProvider.getProperty("apiSecret")
+        String sigHeader = request.getHeaders().get("Stripe-Signature")
+
+        try {
+            Webhook.constructEvent(payload, sigHeader, endpointSecret)
+        } catch (Exception e) {
+            log.error("Error verifying Stripe signature", e)
+            throw new RuntimeException("Unable to process; invalid signature")
+        }
     }
 }

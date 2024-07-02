@@ -1,3 +1,7 @@
+## 0.5.0
+
+Enable addition of user id and tenant id to stripe events via stripe metadata.
+
 ## 0.4.0
 
 Actually handle the stripe event by storing a billing event object.

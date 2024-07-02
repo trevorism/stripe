@@ -46,6 +46,7 @@ class SubscriptionController {
         if (paymentRequest.dollars != 10.00d) {
             throw new RuntimeException("Unable to process; insufficient funds for payment")
         }
+
         ProductData productData = ProductData.builder().setName(paymentRequest.name).build()
         SessionCreateParams.LineItem.PriceData priceData = builder()
                 .setCurrency("usd")
@@ -57,6 +58,9 @@ class SubscriptionController {
                 .setQuantity(1L)
                 .setPriceData(priceData)
                 .build()
+        SessionCreateParams.PaymentIntentData paymentIntentData = SessionCreateParams.PaymentIntentData.builder()
+                .putAllMetadata(SendPaymentController.createPaymentIntentMetadata(authentication))
+                .build()
 
         SessionCreateParams.Builder builder = SessionCreateParams.builder()
                 .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
@@ -64,13 +68,7 @@ class SubscriptionController {
                 .setSuccessUrl(paymentRequest.successCallbackUrl)
                 .setCancelUrl(paymentRequest.failureCallbackUrl)
                 .addLineItem(lineItem)
-
-        if (authentication?.getAttributes()?.get("id")) {
-            builder.putMetadata("userId", authentication.getAttributes().get("id").toString())
-        }
-        if (authentication?.getAttributes()?.get("tenant")) {
-            builder.putMetadata("tenantId", authentication.getAttributes().get("tenant").toString())
-        }
+                .setPaymentIntentData(paymentIntentData)
 
         Session session = Session.create(builder.build())
         return [id: session.getId()]

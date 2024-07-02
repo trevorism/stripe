@@ -45,6 +45,9 @@ class SendPaymentController {
                 .setQuantity(1L)
                 .setPriceData(priceData)
                 .build()
+        SessionCreateParams.PaymentIntentData paymentIntentData = SessionCreateParams.PaymentIntentData.builder()
+                .putAllMetadata(createPaymentIntentMetadata(authentication))
+                .build()
 
         SessionCreateParams.Builder builder = SessionCreateParams.builder()
                 .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
@@ -52,19 +55,21 @@ class SendPaymentController {
                 .setSuccessUrl(paymentRequest.successCallbackUrl)
                 .setCancelUrl(paymentRequest.failureCallbackUrl)
                 .addLineItem(lineItem)
-
-        log.debug("Adding metadata to stripe session..")
-        if (authentication?.getAttributes()?.get("id")) {
-            builder.putMetadata("userId", authentication.getAttributes().get("id").toString())
-            log.debug("User metadata added ${authentication.getAttributes().get("id")}")
-        }
-        if (authentication?.getAttributes()?.get("tenant")) {
-            builder.putMetadata("tenantId", authentication.getAttributes().get("tenant").toString())
-            log.debug("Tenant metadata added ${authentication.getAttributes().get("tenant")}")
-        }
+                .setPaymentIntentData(paymentIntentData)
 
         Session session = Session.create(builder.build())
         return [id: session.getId()]
+    }
+
+    static Map<String, String> createPaymentIntentMetadata(Authentication authentication) {
+        Map<String, String> metadata = new HashMap<>()
+        if (authentication?.getAttributes()?.get("id")) {
+            metadata.put("userId", authentication.getAttributes().get("id").toString())
+        }
+        if (authentication?.getAttributes()?.get("tenant")) {
+            metadata.put("tenantId", authentication.getAttributes().get("tenant").toString())
+        }
+        return metadata
     }
 
 

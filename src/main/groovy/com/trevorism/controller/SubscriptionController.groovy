@@ -58,7 +58,7 @@ class SubscriptionController {
                 .setQuantity(1L)
                 .setPriceData(priceData)
                 .build()
-        SessionCreateParams.PaymentIntentData paymentIntentData = SessionCreateParams.PaymentIntentData.builder()
+        SessionCreateParams.SubscriptionData subscriptionData = SessionCreateParams.SubscriptionData.builder()
                 .putAllMetadata(SendPaymentController.createPaymentIntentMetadata(authentication))
                 .build()
 
@@ -68,7 +68,7 @@ class SubscriptionController {
                 .setSuccessUrl(paymentRequest.successCallbackUrl)
                 .setCancelUrl(paymentRequest.failureCallbackUrl)
                 .addLineItem(lineItem)
-                .setPaymentIntentData(paymentIntentData)
+                .setSubscriptionData(subscriptionData)
 
         Session session = Session.create(builder.build())
         return [id: session.getId()]

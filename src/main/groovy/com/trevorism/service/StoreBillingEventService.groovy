@@ -24,6 +24,7 @@ import jakarta.inject.Inject
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+@jakarta.inject.Singleton
 class StoreBillingEventService implements BillingEventService {
 
     private static final Logger log = LoggerFactory.getLogger(StoreBillingEventService)
@@ -63,7 +64,7 @@ class StoreBillingEventService implements BillingEventService {
             ComplexFilter complexFilter = new FilterBuilder().addFilter(new SimpleFilter("userId", FilterConstants.OPERATOR_EQUAL, userId)).build()
             List<BillingEvent> billingEventList = repository.filter(complexFilter)
             if (billingEventList) {
-                Subscription subscription = Subscription.retrieve(billingEventList[0].billingCustomer)
+                 Subscription subscription = Subscription.retrieve(billingEventList[0].billingCustomer)
                 subscription.cancel()
                 return true
             }

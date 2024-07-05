@@ -1,3 +1,7 @@
+## 0.6.0
+
+Fix subscription payment intent creation.
+
 ## 0.5.0
 
 Enable addition of user id and tenant id to stripe events via stripe metadata.

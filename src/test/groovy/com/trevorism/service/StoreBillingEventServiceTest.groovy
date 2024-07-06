@@ -32,14 +32,4 @@ class StoreBillingEventServiceTest {
         return billingEvent
     }
 
-    @Test
-    void testGetSubscription() {
-        StoreBillingEventService storeBillingEventService = new StoreBillingEventService()
-        storeBillingEventService.propertiesProvider = new ClasspathBasedPropertiesProvider()
-        Authentication authentication = [getAttributes: { -> [id: "5070662116835328"]}] as Authentication
-        BillingSubscription subscription = storeBillingEventService.getSubscription(authentication)
-        println subscription
-
-    }
-
 }

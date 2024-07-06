@@ -1,3 +1,7 @@
+## 0.7.0
+
+Add a way to get the current subscription for a given user.
+
 ## 0.6.0
 
 Fix subscription payment intent creation.

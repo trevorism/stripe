@@ -94,7 +94,7 @@ appengine {
     stage.artifact = layout.buildDirectory.file("libs/${project.name}-all.jar")
     deploy {
         projectId = "trevorism-trade"
-        version = "0-6-0"
+        version = "0-7-0"
     }
 }
 

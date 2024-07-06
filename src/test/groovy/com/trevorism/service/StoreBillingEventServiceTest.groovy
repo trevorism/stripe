@@ -1,6 +1,13 @@
 package com.trevorism.service
 
+import com.stripe.Stripe
+import com.stripe.model.Subscription
+import com.stripe.param.SubscriptionListParams
+import com.trevorism.ClasspathBasedPropertiesProvider
+import com.trevorism.PropertiesProvider
 import com.trevorism.model.BillingEvent
+import com.trevorism.model.BillingSubscription
+import io.micronaut.security.authentication.Authentication
 import org.junit.jupiter.api.Test
 
 class StoreBillingEventServiceTest {
@@ -23,6 +30,16 @@ class StoreBillingEventServiceTest {
         billingEvent.billingCustomer = "cus_J9Q9Q9Q9Q9Q9Q9Q9"
         billingEvent.billingStatus = "succeeded"
         return billingEvent
+    }
+
+    @Test
+    void testGetSubscription() {
+        StoreBillingEventService storeBillingEventService = new StoreBillingEventService()
+        storeBillingEventService.propertiesProvider = new ClasspathBasedPropertiesProvider()
+        Authentication authentication = [getAttributes: { -> [id: "5070662116835328"]}] as Authentication
+        BillingSubscription subscription = storeBillingEventService.getSubscription(authentication)
+        println subscription
+
     }
 
 }

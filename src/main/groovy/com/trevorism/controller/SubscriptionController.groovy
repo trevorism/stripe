@@ -7,6 +7,7 @@ import com.stripe.net.Webhook
 import com.stripe.param.checkout.SessionCreateParams
 import com.trevorism.ClasspathBasedPropertiesProvider
 import com.trevorism.PropertiesProvider
+import com.trevorism.model.BillingSubscription
 import com.trevorism.model.PaymentRequest
 import com.trevorism.model.StripeCallbackEvent
 import com.trevorism.secure.Roles
@@ -17,11 +18,13 @@ import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Delete
+import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.Post
 import io.micronaut.security.authentication.Authentication
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.inject.Inject
+import org.apache.hc.client5.http.HttpResponseException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import static com.stripe.param.checkout.SessionCreateParams.LineItem.PriceData.*
@@ -75,15 +78,23 @@ class SubscriptionController {
     }
 
     @Tag(name = "Subscription Operations")
-    @Operation(summary = "Remove a Stripe Subscription")
+    @Operation(summary = "Get a Stripe Subscription for this user **Secure")
+    @Get(value = "/", produces = MediaType.APPLICATION_JSON, consumes = MediaType.APPLICATION_JSON)
+    @Secure(Roles.USER)
+    BillingSubscription getSubscription(Authentication authentication) {
+        try{
+            return billingEventService.getSubscription(authentication)
+        }catch (Exception e){
+            throw new HttpResponseException(404, e.message)
+        }
+    }
+
+    @Tag(name = "Subscription Operations")
+    @Operation(summary = "Cancel a Stripe Subscription for this user **Secure")
     @Delete(value = "/", produces = MediaType.APPLICATION_JSON, consumes = MediaType.APPLICATION_JSON)
     @Secure(Roles.USER)
-    boolean deleteSubscription(Optional<Authentication> authentication) {
-        if (authentication.isPresent()) {
-            Stripe.apiKey = propertiesProvider?.getProperty("apiKey")
-            return billingEventService.cancelSubscription(authentication.get())
-        }
-        return false
+    boolean deleteSubscription(Authentication authentication) {
+        return billingEventService.cancelSubscription(authentication)
     }
 
 }

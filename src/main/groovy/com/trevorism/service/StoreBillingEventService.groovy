@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.stripe.Stripe
 import com.stripe.model.Subscription
+import com.stripe.param.SubscriptionListParams
 import com.trevorism.PropertiesProvider
 import com.trevorism.data.FastDatastoreRepository
 import com.trevorism.data.Repository
@@ -18,6 +19,7 @@ import com.trevorism.https.SecureHttpClientBase
 import com.trevorism.https.token.ObtainTokenFromAuthServiceFromPropertiesFile
 import com.trevorism.https.token.ObtainTokenFromParameter
 import com.trevorism.model.BillingEvent
+import com.trevorism.model.BillingSubscription
 import com.trevorism.model.InternalTokenRequest
 import io.micronaut.security.authentication.Authentication
 import jakarta.inject.Inject
@@ -47,31 +49,64 @@ class StoreBillingEventService implements BillingEventService {
         return null
     }
 
-    private Repository<BillingEvent> createBillingEventRepository(String tenantId) {
-        String token = getInternalToken(tenantId)
-        SecureHttpClient internalHttpClient = new SecureHttpClientBase(singletonClient, new ObtainTokenFromParameter(token)) {}
-        Repository<BillingEvent> repository = new FastDatastoreRepository<>(BillingEvent.class, internalHttpClient)
-        return repository
+    @Override
+    BillingSubscription getSubscription(Authentication authentication) {
+        try {
+            Stripe.apiKey = propertiesProvider.getProperty("apiKey")
+            String customerId = getCustomerIdFromAuthentication(authentication)
+            Subscription subscription = getSubscriptionFromCustomerId(customerId)
+            return BillingSubscription.from(subscription)
+        } catch (Exception e) {
+            log.error("Unable to get subscription", e)
+            throw e
+        }
     }
 
     @Override
     boolean cancelSubscription(Authentication authentication) {
         try {
             Stripe.apiKey = propertiesProvider.getProperty("apiKey")
-            String tenantId = authentication?.attributes?.get("tenant")
-            String userId = authentication?.attributes?.get("id")
-            Repository<BillingEvent> repository = createBillingEventRepository(tenantId)
-            ComplexFilter complexFilter = new FilterBuilder().addFilter(new SimpleFilter("userId", FilterConstants.OPERATOR_EQUAL, userId)).build()
-            List<BillingEvent> billingEventList = repository.filter(complexFilter)
-            if (billingEventList) {
-                 Subscription subscription = Subscription.retrieve(billingEventList[0].billingCustomer)
-                subscription.cancel()
-                return true
-            }
+            String customerId = getCustomerIdFromAuthentication(authentication)
+            Subscription subscription = getSubscriptionFromCustomerId(customerId)
+            subscription.cancel()
+            return true
         } catch (Exception e) {
             log.error("Unable to cancel subscription", e)
         }
         return false
+    }
+
+    private String getCustomerIdFromAuthentication(Authentication authentication) {
+        String tenantId = authentication?.attributes?.get("tenant")
+        String userId = authentication?.attributes?.get("id")
+        Repository<BillingEvent> repository = createBillingEventRepository(tenantId)
+        ComplexFilter complexFilter = new FilterBuilder().addFilter(new SimpleFilter("userId", FilterConstants.OPERATOR_EQUAL, userId)).build()
+        List<BillingEvent> billingEventList = repository.filter(complexFilter)
+        if (billingEventList) {
+            return billingEventList[0].billingCustomer
+        }
+        throw new RuntimeException("Unable to get stripe customer id from user id: ${userId}")
+    }
+
+    private static Subscription getSubscriptionFromCustomerId(String customerId) {
+        if(!customerId) {
+            throw new RuntimeException("Unable to get subscription, stripe customer id not found")
+        }
+
+        SubscriptionListParams request = SubscriptionListParams.builder().setCustomer(customerId).build()
+        List<Subscription> subscriptions = Subscription.list(request).getData()
+        Subscription activeSubscription = subscriptions.find { it.status == "active" }
+        if(activeSubscription) {
+            return activeSubscription
+        }
+        throw new RuntimeException("Unable to get subscription from stripe customer id: ${customerId}")
+    }
+
+    private Repository<BillingEvent> createBillingEventRepository(String tenantId) {
+        String token = getInternalToken(tenantId)
+        SecureHttpClient internalHttpClient = new SecureHttpClientBase(singletonClient, new ObtainTokenFromParameter(token)) {}
+        Repository<BillingEvent> repository = new FastDatastoreRepository<>(BillingEvent.class, internalHttpClient)
+        return repository
     }
 
     private String getInternalToken(String tenantId) {

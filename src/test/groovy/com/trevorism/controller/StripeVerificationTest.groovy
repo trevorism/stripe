@@ -582,11 +582,26 @@ class StripeVerificationTest {
   }"""
 
     @Test
-    void processEvent(){
+    void testParseEventOne(){
+        Gson gson = new Gson()
+        StripeCallbackEventDataObject stripeCallback = gson.fromJson(sampleEventOne, StripeCallbackEventDataObject)
+        assert stripeCallback
+        assert stripeCallback.amount == 2000
+    }
+
+    @Test
+    void testParseEventTwo(){
         Gson gson = new Gson()
         StripeCallbackEventDataObject stripeCallback = gson.fromJson(sampleEventTwo, StripeCallbackEventDataObject)
+        assert stripeCallback
+        assert stripeCallback.amount == 1000
+    }
 
-
-        println stripeCallback
+    @Test
+    void testParseEventThree(){
+        Gson gson = new Gson()
+        StripeCallbackEventDataObject stripeCallback = gson.fromJson(sampleEventThree, StripeCallbackEventDataObject)
+        assert stripeCallback
+        assert stripeCallback.amount == 499
     }
 }

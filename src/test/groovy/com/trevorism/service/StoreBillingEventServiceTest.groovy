@@ -1,23 +1,98 @@
 package com.trevorism.service
 
-import com.stripe.Stripe
-import com.stripe.model.Subscription
-import com.stripe.param.SubscriptionListParams
-import com.trevorism.ClasspathBasedPropertiesProvider
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.stripe.model.oauth.TokenResponse
 import com.trevorism.PropertiesProvider
+import com.trevorism.controller.SendPaymentControllerTest
+import com.trevorism.http.HeadersHttpResponse
+import com.trevorism.http.HttpClient
 import com.trevorism.model.BillingEvent
-import com.trevorism.model.BillingSubscription
-import io.micronaut.security.authentication.Authentication
 import org.junit.jupiter.api.Test
 
 class StoreBillingEventServiceTest {
 
     @Test
     void testProcessBillingEvent() {
-        //StoreBillingEventService storeBillingEventService = new StoreBillingEventService()
+        StoreBillingEventService storeBillingEventService = new StoreBillingEventService()
+        storeBillingEventService.propertiesProvider = [getProperty: {key -> "x"}] as PropertiesProvider
+        storeBillingEventService.singletonClient = createTestHttpClient()
         BillingEvent event = createSampleBillingEvent()
-        //BillingEvent created = storeBillingEventService.processBillingEvent(event)
+        BillingEvent created = storeBillingEventService.processBillingEvent(event)
         assert event != null
+        assert created != null
+    }
+
+    @Test
+    void testGetCustomerIdFromAuthentication(){
+        StoreBillingEventService storeBillingEventService = new StoreBillingEventService()
+        storeBillingEventService.propertiesProvider = [getProperty: {key -> "x"}] as PropertiesProvider
+        storeBillingEventService.singletonClient = createTestHttpClient()
+        String customerId = storeBillingEventService.getCustomerIdFromAuthentication(SendPaymentControllerTest.createSampleAuthentication())
+        assert customerId == "cus_J9Q9Q9Q9Q9Q9Q9Q9"
+    }
+
+    private static createTestHttpClient(){
+        Gson gson = new GsonBuilder().disableHtmlEscaping().setDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").create()
+        new HttpClient() {
+            @Override
+            String get(String s) {
+                return null
+            }
+
+            @Override
+            HeadersHttpResponse get(String s, Map<String, String> map) {
+                return null
+            }
+
+            @Override
+            String post(String s, String s1) {
+                if(s == "https://auth.trevorism.com/token"){
+                    return gson.toJson(new TokenResponse())
+                }
+
+                return gson.toJson(createSampleBillingEvent())
+            }
+
+            @Override
+            HeadersHttpResponse post(String s, String s1, Map<String, String> map) {
+                if(s == "https://datastore.data.trevorism.com/filter/billingevent"){
+                    return new HeadersHttpResponse(gson.toJson([createSampleBillingEvent()]), map)
+                }
+
+                return new HeadersHttpResponse(gson.toJson(new TokenResponse()), map)
+            }
+
+            @Override
+            String put(String s, String s1) {
+                return null
+            }
+
+            @Override
+            HeadersHttpResponse put(String s, String s1, Map<String, String> map) {
+                return null
+            }
+
+            @Override
+            String patch(String s, String s1) {
+                return null
+            }
+
+            @Override
+            HeadersHttpResponse patch(String s, String s1, Map<String, String> map) {
+                return null
+            }
+
+            @Override
+            String delete(String s) {
+                return null
+            }
+
+            @Override
+            HeadersHttpResponse delete(String s, Map<String, String> map) {
+                return null
+            }
+        }
     }
 
     private static BillingEvent createSampleBillingEvent() {

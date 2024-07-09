@@ -35,7 +35,7 @@ class StoreBillingEventService implements BillingEventService {
     private PropertiesProvider propertiesProvider
 
     private HttpClient singletonClient = new JsonHttpClient()
-    private Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").create()
+    private Gson gson = new GsonBuilder().disableHtmlEscaping().setDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").create()
 
     @Override
     BillingEvent processBillingEvent(BillingEvent event) {

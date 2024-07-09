@@ -1,3 +1,7 @@
+## 0.7.1
+
+Add more testing
+
 ## 0.7.0
 
 Add a way to get the current subscription for a given user.

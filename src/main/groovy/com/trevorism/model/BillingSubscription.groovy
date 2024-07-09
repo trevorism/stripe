@@ -11,7 +11,7 @@ class BillingSubscription {
     boolean active
 
     static BillingSubscription from(Subscription subscription) {
-        if (subscription == null)
+        if (subscriptionIsMalformed(subscription))
             return null
 
         return new BillingSubscription([
@@ -22,5 +22,12 @@ class BillingSubscription {
                 renewalDate   : new Date(subscription.currentPeriodEnd * 1000),
                 active        : subscription.status == "active"
         ])
+    }
+
+    private static boolean subscriptionIsMalformed(Subscription subscription) {
+        return subscription == null ||
+                subscription.items?.data?.get(0)?.price?.unitAmountDecimal == null ||
+                !subscription.created ||
+                !subscription.currentPeriodEnd
     }
 }

@@ -61,8 +61,8 @@ dependencies {
     runtimeOnly("ch.qos.logback:logback-classic")
 
     implementation 'com.google.code.gson:gson:2.14.0'
-    implementation 'com.stripe:stripe-java:26.1.0'
-    implementation 'com.trevorism:micronaut-utility-beans:1.7.2'
+    implementation 'com.stripe:stripe-java:33.0.0'
+    implementation 'com.trevorism:micronaut-utility-beans:2.0.0'
     implementation ('com.trevorism:datastore-client:4.1.0'){
         exclude module:"slf4j-nop"
     }

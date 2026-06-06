@@ -31,7 +31,7 @@ class BillingSubscriptionTest {
         subscription.items.data[0].price = new Price()
         subscription.items.data[0].price.unitAmountDecimal = 1000
         subscription.created = 1234567890
-        subscription.currentPeriodEnd = 1234567890
+        subscription.items.data[0].currentPeriodEnd = 1234567890
         subscription.status = "active"
 
         BillingSubscription billingSubscription = BillingSubscription.from(subscription)

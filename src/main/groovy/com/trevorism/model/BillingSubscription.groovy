@@ -19,7 +19,7 @@ class BillingSubscription {
                 customerId    : subscription.customer,
                 amount        : subscription.items?.data?.get(0)?.price?.unitAmountDecimal / 100d,
                 createdDate   : new Date(subscription.created * 1000),
-                renewalDate   : new Date(subscription.currentPeriodEnd * 1000),
+                renewalDate   : new Date(subscription.items?.data?.get(0)?.currentPeriodEnd * 1000),
                 active        : subscription.status == "active"
         ])
     }
@@ -28,6 +28,6 @@ class BillingSubscription {
         return subscription == null ||
                 subscription.items?.data?.get(0)?.price?.unitAmountDecimal == null ||
                 !subscription.created ||
-                !subscription.currentPeriodEnd
+                !subscription.items?.data?.get(0)?.currentPeriodEnd
     }
 }

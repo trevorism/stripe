@@ -58,7 +58,7 @@ class SendPaymentController {
                 .setPaymentIntentData(paymentIntentData)
 
         Session session = Session.create(builder.build())
-        return [id: session.getId()]
+        return [id: session.getId(), url: session.getUrl()]
     }
 
     static Map<String, String> createPaymentIntentMetadata(Authentication authentication) {

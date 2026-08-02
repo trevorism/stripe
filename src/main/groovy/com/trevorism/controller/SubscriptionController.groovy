@@ -74,7 +74,7 @@ class SubscriptionController {
                 .setSubscriptionData(subscriptionData)
 
         Session session = Session.create(builder.build())
-        return [id: session.getId()]
+        return [id: session.getId(), url: session.getUrl()]
     }
 
     @Tag(name = "Subscription Operations")

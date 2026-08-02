@@ -1,3 +1,7 @@
+## 0.9.0
+
+Updgrade to latest stripe and versioning plugin
+
 ## 0.8.0
 
 Upgrade to Micronaut 5.0.0, Java 25 runtime, Gradle 9.x wrapper, and latest platform dependencies.

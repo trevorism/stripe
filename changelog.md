@@ -1,3 +1,7 @@
+## 1.0.0
+
+Fix bug with anonymous payments not being allowed.
+
 ## 0.9.0
 
 Updgrade to latest stripe and versioning plugin

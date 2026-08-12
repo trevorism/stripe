@@ -5,6 +5,7 @@ import com.stripe.model.checkout.Session
 import com.stripe.param.checkout.SessionCreateParams
 import com.trevorism.PropertiesProvider
 import com.trevorism.model.PaymentRequest
+import io.micronaut.core.annotation.Nullable
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
@@ -28,7 +29,7 @@ class SendPaymentController {
     @Tag(name = "Payment Operations")
     @Operation(summary = "Create a new Stripe Payment Session")
     @Post(value = "/session", produces = MediaType.APPLICATION_JSON, consumes = MediaType.APPLICATION_JSON)
-    Map createSession(@Body PaymentRequest paymentRequest, Authentication authentication) {
+    Map createSession(@Body PaymentRequest paymentRequest, @Nullable Authentication authentication) {
         Stripe.apiKey = propertiesProvider.getProperty("apiKey")
         if (paymentRequest.dollars < 0.99) {
             log.warn("Failed payment attempt of ${paymentRequest.dollars}")

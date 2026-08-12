@@ -20,6 +20,12 @@ class SendPaymentControllerTest {
         assert !map
     }
 
+    @Test
+    void testCreatePaymentIntentMetadataAnonymous() {
+        def map = SendPaymentController.createPaymentIntentMetadata(null)
+        assert !map
+    }
+
     static Authentication createSampleAuthentication() {
         new ServerAuthentication("trevor", ["ROLE_USER"], [id:"test_id","tenant":"test_tenant"])
     }

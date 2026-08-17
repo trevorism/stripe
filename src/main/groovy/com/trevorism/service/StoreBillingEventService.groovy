@@ -63,6 +63,21 @@ class StoreBillingEventService implements BillingEventService {
     }
 
     @Override
+    BillingSubscription getSubscriptionForCustomer(String customerId) {
+        if (!customerId) {
+            throw new RuntimeException("Unable to get subscription, stripe customer id not found")
+        }
+        Stripe.apiKey = propertiesProvider.getProperty("apiKey")
+
+        SubscriptionListParams request = SubscriptionListParams.builder().setCustomer(customerId).build()
+        Subscription activeSubscription = Subscription.list(request).getData().find { it.status == "active" }
+        if (!activeSubscription) {
+            return new BillingSubscription(customerId: customerId, active: false)
+        }
+        return BillingSubscription.from(activeSubscription)
+    }
+
+    @Override
     boolean cancelSubscription(Authentication authentication) {
         try {
             Stripe.apiKey = propertiesProvider.getProperty("apiKey")

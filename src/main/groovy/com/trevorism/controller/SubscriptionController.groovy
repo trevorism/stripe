@@ -61,8 +61,9 @@ class SubscriptionController {
                 .setQuantity(1L)
                 .setPriceData(priceData)
                 .build()
+        Map<String, String> identityMetadata = SendPaymentController.createIdentityMetadata(authentication)
         SessionCreateParams.SubscriptionData subscriptionData = SessionCreateParams.SubscriptionData.builder()
-                .putAllMetadata(SendPaymentController.createPaymentIntentMetadata(authentication))
+                .putAllMetadata(identityMetadata)
                 .build()
 
         SessionCreateParams.Builder builder = SessionCreateParams.builder()
@@ -72,6 +73,7 @@ class SubscriptionController {
                 .setCancelUrl(paymentRequest.failureCallbackUrl)
                 .addLineItem(lineItem)
                 .setSubscriptionData(subscriptionData)
+                .putAllMetadata(identityMetadata)
 
         Session session = Session.create(builder.build())
         return [id: session.getId(), url: session.getUrl()]
@@ -85,6 +87,18 @@ class SubscriptionController {
         try{
             return billingEventService.getSubscription(authentication)
         }catch (Exception e){
+            throw new HttpResponseException(404, e.message)
+        }
+    }
+
+    @Tag(name = "Subscription Operations")
+    @Operation(summary = "Get a Stripe Subscription for a billing customer **Secure")
+    @Get(value = "/customer/{customerId}", produces = MediaType.APPLICATION_JSON)
+    @Secure(Roles.SYSTEM)
+    BillingSubscription getSubscriptionForCustomer(String customerId) {
+        try {
+            return billingEventService.getSubscriptionForCustomer(customerId)
+        } catch (Exception e) {
             throw new HttpResponseException(404, e.message)
         }
     }

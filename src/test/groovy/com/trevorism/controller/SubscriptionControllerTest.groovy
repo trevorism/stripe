@@ -4,6 +4,7 @@ import com.stripe.model.Subscription
 import com.trevorism.model.BillingSubscription
 import com.trevorism.service.BillingEventService
 import io.micronaut.security.authentication.Authentication
+import org.apache.hc.client5.http.HttpResponseException
 import org.junit.jupiter.api.Test
 
 class SubscriptionControllerTest {
@@ -14,6 +15,47 @@ class SubscriptionControllerTest {
         controller.billingEventService = [getSubscription: {auth -> new BillingSubscription([amount: 10])}] as BillingEventService
         def subscription = controller.getSubscription({ } as Authentication)
         assert subscription.amount == 10d
+    }
+
+    @Test
+    void testGetSubscriptionForCustomer() {
+        SubscriptionController controller = new SubscriptionController()
+        controller.billingEventService = [getSubscriptionForCustomer: { String customerId ->
+            new BillingSubscription([customerId: customerId, active: true])
+        }] as BillingEventService
+
+        def subscription = controller.getSubscriptionForCustomer("cus_abc")
+
+        assert subscription.customerId == "cus_abc"
+        assert subscription.active
+    }
+
+    @Test
+    void testGetSubscriptionForCustomerReportsInactiveRatherThanFailing() {
+        SubscriptionController controller = new SubscriptionController()
+        controller.billingEventService = [getSubscriptionForCustomer: { String customerId ->
+            new BillingSubscription([customerId: customerId, active: false])
+        }] as BillingEventService
+
+        def subscription = controller.getSubscriptionForCustomer("cus_lapsed")
+
+        assert subscription.customerId == "cus_lapsed"
+        assert !subscription.active
+    }
+
+    @Test
+    void testGetSubscriptionForCustomerTranslatesFailureToNotFound() {
+        SubscriptionController controller = new SubscriptionController()
+        controller.billingEventService = [getSubscriptionForCustomer: { String customerId ->
+            throw new RuntimeException("no such customer")
+        }] as BillingEventService
+
+        try {
+            controller.getSubscriptionForCustomer("cus_missing")
+            assert false
+        } catch (HttpResponseException e) {
+            assert e.statusCode == 404
+        }
     }
 
     @Test

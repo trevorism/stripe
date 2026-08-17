@@ -47,7 +47,7 @@ class SendPaymentController {
                 .setPriceData(priceData)
                 .build()
         SessionCreateParams.PaymentIntentData paymentIntentData = SessionCreateParams.PaymentIntentData.builder()
-                .putAllMetadata(createPaymentIntentMetadata(authentication))
+                .putAllMetadata(createIdentityMetadata(authentication))
                 .build()
 
         SessionCreateParams.Builder builder = SessionCreateParams.builder()
@@ -62,7 +62,7 @@ class SendPaymentController {
         return [id: session.getId(), url: session.getUrl()]
     }
 
-    static Map<String, String> createPaymentIntentMetadata(Authentication authentication) {
+    static Map<String, String> createIdentityMetadata(Authentication authentication) {
         Map<String, String> metadata = new HashMap<>()
         if (authentication?.getAttributes()?.get("id")) {
             metadata.put("userId", authentication.getAttributes().get("id").toString())

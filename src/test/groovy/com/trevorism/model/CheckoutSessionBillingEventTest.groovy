@@ -38,6 +38,21 @@ class CheckoutSessionBillingEventTest {
     "status": "open"
   }"""
 
+    private static final String paidOneTimePaymentSession = """{
+    "id": "cs_test_onetime",
+    "object": "checkout.session",
+    "amount_total": 499,
+    "created": 1719785270,
+    "currency": "usd",
+    "customer": null,
+    "metadata": {
+      "userId": "5154038974775296"
+    },
+    "mode": "payment",
+    "payment_status": "paid",
+    "status": "complete"
+  }"""
+
     private static final String unsupportedObject = """{
     "id": "sub_1PXVudKUPlXay6LPZ8kQrTuv",
     "object": "subscription",
@@ -62,6 +77,11 @@ class CheckoutSessionBillingEventTest {
     @Test
     void testUnpaidCheckoutSessionIsIgnored() {
         assert BillingEvent.from(buildCallback(unpaidSubscriptionSession)) == null
+    }
+
+    @Test
+    void testPaidOneTimeSessionIsIgnoredSoPaymentsAreNotRecordedTwice() {
+        assert BillingEvent.from(buildCallback(paidOneTimePaymentSession)) == null
     }
 
     @Test

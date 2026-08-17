@@ -96,10 +96,14 @@ class SubscriptionController {
     @Get(value = "/customer/{customerId}", produces = MediaType.APPLICATION_JSON)
     @Secure(Roles.SYSTEM)
     BillingSubscription getSubscriptionForCustomer(String customerId) {
+        if (!customerId?.trim()) {
+            throw new HttpResponseException(400, "A stripe customer id is required")
+        }
         try {
             return billingEventService.getSubscriptionForCustomer(customerId)
         } catch (Exception e) {
-            throw new HttpResponseException(404, e.message)
+            log.error("Unable to look up subscription for customer ${customerId}", e)
+            throw new HttpResponseException(404, "Unable to look up subscription")
         }
     }
 

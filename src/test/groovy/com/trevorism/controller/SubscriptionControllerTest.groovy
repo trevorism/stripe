@@ -44,10 +44,10 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void testGetSubscriptionForCustomerTranslatesFailureToNotFound() {
+    void testGetSubscriptionForCustomerTranslatesFailureToNotFoundWithoutLeakingDetails() {
         SubscriptionController controller = new SubscriptionController()
         controller.billingEventService = [getSubscriptionForCustomer: { String customerId ->
-            throw new RuntimeException("no such customer")
+            throw new RuntimeException("stripe: invalid api key sk_live_secret")
         }] as BillingEventService
 
         try {
@@ -55,6 +55,23 @@ class SubscriptionControllerTest {
             assert false
         } catch (HttpResponseException e) {
             assert e.statusCode == 404
+            assert e.reasonPhrase == "Unable to look up subscription"
+            assert !e.message.contains("sk_live_secret")
+        }
+    }
+
+    @Test
+    void testGetSubscriptionForCustomerRejectsABlankCustomerId() {
+        SubscriptionController controller = new SubscriptionController()
+        controller.billingEventService = [getSubscriptionForCustomer: { String customerId ->
+            throw new IllegalStateException("should not be called")
+        }] as BillingEventService
+
+        try {
+            controller.getSubscriptionForCustomer("   ")
+            assert false
+        } catch (HttpResponseException e) {
+            assert e.statusCode == 400
         }
     }
 

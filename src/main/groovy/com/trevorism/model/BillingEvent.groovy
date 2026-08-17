@@ -5,6 +5,7 @@ class BillingEvent {
     static final String PAYMENT_INTENT_OBJECT = "payment_intent"
     static final String CHECKOUT_SESSION_OBJECT = "checkout.session"
     static final String PAID_PAYMENT_STATUS = "paid"
+    static final String SUBSCRIPTION_MODE = "subscription"
 
     String id
     String userId
@@ -45,7 +46,7 @@ class BillingEvent {
     }
 
     private static BillingEvent fromCheckoutSession(StripeCallbackEventDataObject data) {
-        if (data.payment_status != PAID_PAYMENT_STATUS) {
+        if (data.mode != SUBSCRIPTION_MODE || data.payment_status != PAID_PAYMENT_STATUS) {
             return null
         }
 

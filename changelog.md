@@ -1,3 +1,7 @@
+## 1.1.0
+
+Add capability to tie tenant creation to billing. Add a /me endpoint.
+
 ## 1.0.0
 
 Fix bug with anonymous payments not being allowed.

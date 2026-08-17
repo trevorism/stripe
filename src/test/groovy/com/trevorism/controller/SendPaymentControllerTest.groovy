@@ -9,20 +9,20 @@ class SendPaymentControllerTest {
     @Test
     void testCreatePaymentIntentMetadata() {
         Authentication authentication = createSampleAuthentication()
-        def map = SendPaymentController.createPaymentIntentMetadata(authentication)
+        def map = SendPaymentController.createIdentityMetadata(authentication)
         assert map["userId"] == "test_id"
         assert map["tenantId"] == "test_tenant"
     }
 
     @Test
     void testCreatePaymentIntentMetadataEmptyAuth() {
-        def map = SendPaymentController.createPaymentIntentMetadata({ } as Authentication)
+        def map = SendPaymentController.createIdentityMetadata({ } as Authentication)
         assert !map
     }
 
     @Test
     void testCreatePaymentIntentMetadataAnonymous() {
-        def map = SendPaymentController.createPaymentIntentMetadata(null)
+        def map = SendPaymentController.createIdentityMetadata(null)
         assert !map
     }
 

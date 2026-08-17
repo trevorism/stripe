@@ -63,6 +63,20 @@ class StoreBillingEventService implements BillingEventService {
     }
 
     @Override
+    BillingSubscription getSubscriptionForCustomer(String customerId) {
+        if (!customerId?.trim()) {
+            throw new IllegalArgumentException("A stripe customer id is required")
+        }
+        Stripe.apiKey = propertiesProvider.getProperty("apiKey")
+
+        Subscription activeSubscription = findActiveSubscription(customerId)
+        if (!activeSubscription) {
+            return new BillingSubscription(customerId: customerId, active: false)
+        }
+        return BillingSubscription.from(activeSubscription)
+    }
+
+    @Override
     boolean cancelSubscription(Authentication authentication) {
         try {
             Stripe.apiKey = propertiesProvider.getProperty("apiKey")
@@ -93,13 +107,20 @@ class StoreBillingEventService implements BillingEventService {
             throw new RuntimeException("Unable to get subscription, stripe customer id not found")
         }
 
-        SubscriptionListParams request = SubscriptionListParams.builder().setCustomer(customerId).build()
-        List<Subscription> subscriptions = Subscription.list(request).getData()
-        Subscription activeSubscription = subscriptions.find { it.status == "active" }
+        Subscription activeSubscription = findActiveSubscription(customerId)
         if(activeSubscription) {
             return activeSubscription
         }
         throw new RuntimeException("Unable to get subscription from stripe customer id: ${customerId}")
+    }
+
+    private static Subscription findActiveSubscription(String customerId) {
+        SubscriptionListParams request = SubscriptionListParams.builder()
+                .setCustomer(customerId)
+                .setStatus(SubscriptionListParams.Status.ACTIVE)
+                .setLimit(1L)
+                .build()
+        return Subscription.list(request).getData()[0]
     }
 
     private Repository<BillingEvent> createBillingEventRepository(String tenantId) {

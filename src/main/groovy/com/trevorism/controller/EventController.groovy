@@ -37,12 +37,12 @@ class EventController {
         validateStripeEvent(request, payload)
 
         StripeCallbackEvent stripeCallback = gson.fromJson(payload, StripeCallbackEvent)
-        if(stripeCallback?.data?.object?.object != "payment_intent"){
+        BillingEvent billingEvent = BillingEvent.from(stripeCallback)
+        if(!billingEvent){
             log.debug("Ignoring event of type: ${stripeCallback?.data?.object?.object}")
             return false
         }
 
-        BillingEvent billingEvent = BillingEvent.from(stripeCallback)
         billingEventService.processBillingEvent(billingEvent)
         return true
     }

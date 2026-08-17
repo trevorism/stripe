@@ -8,5 +8,6 @@ interface BillingEventService {
 
     BillingEvent processBillingEvent(BillingEvent event)
     BillingSubscription getSubscription(Authentication authentication)
+    BillingSubscription getSubscriptionForCustomer(String customerId)
     boolean cancelSubscription(Authentication authentication)
 }

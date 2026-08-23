@@ -77,6 +77,22 @@ class StoreBillingEventService implements BillingEventService {
     }
 
     @Override
+    Map createPortalSession(Authentication authentication, String returnUrl) {
+        if (!returnUrl?.trim()) {
+            throw new IllegalArgumentException("A return url is required")
+        }
+        Stripe.apiKey = propertiesProvider.getProperty("apiKey")
+        String customerId = getCustomerIdFromAuthentication(authentication)
+        com.stripe.param.billingportal.SessionCreateParams params =
+                com.stripe.param.billingportal.SessionCreateParams.builder()
+                        .setCustomer(customerId)
+                        .setReturnUrl(returnUrl)
+                        .build()
+        com.stripe.model.billingportal.Session session = com.stripe.model.billingportal.Session.create(params)
+        return [url: session.url]
+    }
+
+    @Override
     boolean cancelSubscription(Authentication authentication) {
         try {
             Stripe.apiKey = propertiesProvider.getProperty("apiKey")

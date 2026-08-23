@@ -10,4 +10,5 @@ interface BillingEventService {
     BillingSubscription getSubscription(Authentication authentication)
     BillingSubscription getSubscriptionForCustomer(String customerId)
     boolean cancelSubscription(Authentication authentication)
+    Map createPortalSession(Authentication authentication, String returnUrl)
 }

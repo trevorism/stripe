@@ -9,6 +9,7 @@ import com.trevorism.ClasspathBasedPropertiesProvider
 import com.trevorism.PropertiesProvider
 import com.trevorism.model.BillingSubscription
 import com.trevorism.model.PaymentRequest
+import com.trevorism.model.PortalRequest
 import com.trevorism.model.StripeCallbackEvent
 import com.trevorism.secure.Roles
 import com.trevorism.secure.Secure
@@ -113,6 +114,19 @@ class SubscriptionController {
     @Secure(Roles.USER)
     boolean deleteSubscription(Authentication authentication) {
         return billingEventService.cancelSubscription(authentication)
+    }
+
+    @Tag(name = "Subscription Operations")
+    @Operation(summary = "Create a Stripe billing portal session for this user **Secure")
+    @Post(value = "/portal", produces = MediaType.APPLICATION_JSON, consumes = MediaType.APPLICATION_JSON)
+    @Secure(Roles.USER)
+    Map createPortalSession(@Body PortalRequest portalRequest, Authentication authentication) {
+        try {
+            return billingEventService.createPortalSession(authentication, portalRequest?.returnUrl)
+        } catch (Exception e) {
+            log.error("Unable to create a billing portal session", e)
+            throw new HttpResponseException(400, "Unable to create a billing portal session")
+        }
     }
 
 }

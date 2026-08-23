@@ -1,3 +1,7 @@
+## 1.2.0
+
+Streamline the subscription process for billing tenants.
+
 ## 1.1.0
 
 Add capability to tie tenant creation to billing. Add a /me endpoint.

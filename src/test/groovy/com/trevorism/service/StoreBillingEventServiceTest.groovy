@@ -32,6 +32,20 @@ class StoreBillingEventServiceTest {
         assert customerId == "cus_J9Q9Q9Q9Q9Q9Q9Q9"
     }
 
+    @Test
+    void testCreatePortalSessionRejectsABlankReturnUrl(){
+        StoreBillingEventService storeBillingEventService = new StoreBillingEventService()
+        storeBillingEventService.propertiesProvider = [getProperty: {key -> "x"}] as PropertiesProvider
+        storeBillingEventService.singletonClient = createTestHttpClient()
+
+        try {
+            storeBillingEventService.createPortalSession(SendPaymentControllerTest.createSampleAuthentication(), "   ")
+            assert false
+        } catch (IllegalArgumentException e) {
+            assert e.message == "A return url is required"
+        }
+    }
+
     private static createTestHttpClient(){
         Gson gson = new GsonBuilder().disableHtmlEscaping().setDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").create()
         new HttpClient() {

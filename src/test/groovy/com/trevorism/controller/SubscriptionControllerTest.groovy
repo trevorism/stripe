@@ -2,6 +2,7 @@ package com.trevorism.controller
 
 import com.stripe.model.Subscription
 import com.trevorism.model.BillingSubscription
+import com.trevorism.model.PortalRequest
 import com.trevorism.service.BillingEventService
 import io.micronaut.security.authentication.Authentication
 import org.apache.hc.client5.http.HttpResponseException
@@ -81,5 +82,37 @@ class SubscriptionControllerTest {
         controller.billingEventService = [cancelSubscription: {auth -> true}] as BillingEventService
         def result = controller.deleteSubscription({ } as Authentication)
         assert result
+    }
+
+    @Test
+    void testCreatePortalSessionPassesTheReturnUrlThrough() {
+        String captured = null
+        SubscriptionController controller = new SubscriptionController()
+        controller.billingEventService = [createPortalSession: { auth, String returnUrl ->
+            captured = returnUrl
+            return [url: "https://billing.stripe.com/session/abc"]
+        }] as BillingEventService
+
+        def session = controller.createPortalSession(new PortalRequest(returnUrl: "https://trevorism.com/tenant"),
+                { } as Authentication)
+
+        assert captured == "https://trevorism.com/tenant"
+        assert session.url == "https://billing.stripe.com/session/abc"
+    }
+
+    @Test
+    void testCreatePortalSessionTranslatesFailureWithoutLeakingDetails() {
+        SubscriptionController controller = new SubscriptionController()
+        controller.billingEventService = [createPortalSession: { auth, String returnUrl ->
+            throw new RuntimeException("stripe: invalid api key sk_live_secret")
+        }] as BillingEventService
+
+        try {
+            controller.createPortalSession(new PortalRequest(), { } as Authentication)
+            assert false
+        } catch (HttpResponseException e) {
+            assert e.statusCode == 400
+            assert !e.message.contains("sk_live_secret")
+        }
     }
 }

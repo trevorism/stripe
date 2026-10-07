@@ -114,7 +114,12 @@ class SubscriptionController {
     @Delete(value = "/", produces = MediaType.APPLICATION_JSON, consumes = MediaType.APPLICATION_JSON)
     @Secure(Roles.USER)
     boolean deleteSubscription(Authentication authentication) {
-        return billingEventService.cancelSubscription(authentication)
+        try {
+            return billingEventService.cancelSubscription(authentication)
+        } catch (Exception e) {
+            log.error("Unable to cancel subscription", e)
+            throw new HttpStatusException(HttpStatus.NOT_FOUND, "Unable to cancel subscription")
+        }
     }
 
     @Tag(name = "Subscription Operations")

@@ -86,6 +86,22 @@ class SubscriptionControllerTest {
     }
 
     @Test
+    void testDeleteSubscriptionTranslatesFailureToNotFoundWithoutLeakingDetails() {
+        SubscriptionController controller = new SubscriptionController()
+        controller.billingEventService = [cancelSubscription: { auth ->
+            throw new RuntimeException("stripe: invalid api key sk_live_secret")
+        }] as BillingEventService
+
+        try {
+            controller.deleteSubscription({ } as Authentication)
+            assert false
+        } catch (HttpStatusException e) {
+            assert e.status == HttpStatus.NOT_FOUND
+            assert !e.message.contains("sk_live_secret")
+        }
+    }
+
+    @Test
     void testCreatePortalSessionPassesTheReturnUrlThrough() {
         String captured = null
         SubscriptionController controller = new SubscriptionController()

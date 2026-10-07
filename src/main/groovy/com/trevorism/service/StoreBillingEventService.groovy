@@ -16,7 +16,7 @@ import com.trevorism.http.HttpClient
 import com.trevorism.http.JsonHttpClient
 import com.trevorism.https.SecureHttpClient
 import com.trevorism.https.SecureHttpClientBase
-import com.trevorism.https.token.ObtainTokenFromAuthServiceFromPropertiesFile
+import com.trevorism.https.token.ObtainTokenFromAuthServiceFromParameter
 import com.trevorism.https.token.ObtainTokenFromParameter
 import com.trevorism.model.BillingEvent
 import com.trevorism.model.BillingSubscription
@@ -42,11 +42,16 @@ class StoreBillingEventService implements BillingEventService {
         try {
             log.info("Processing billing event ${event?.billingId}")
             Repository<BillingEvent> repository = createBillingEventRepository(event.tenantId)
+            BillingEvent alreadyRecorded = findByBillingId(repository, event.billingId)
+            if (alreadyRecorded) {
+                log.info("Billing event ${event.billingId} was already recorded; ignoring the redelivery")
+                return alreadyRecorded
+            }
             return repository.create(event)
         } catch (Exception e) {
-            log.error("Unable to process billing event", e)
+            log.error("Unable to process billing event ${event?.billingId}", e)
+            throw e
         }
-        return null
     }
 
     @Override
@@ -94,16 +99,20 @@ class StoreBillingEventService implements BillingEventService {
 
     @Override
     boolean cancelSubscription(Authentication authentication) {
-        try {
-            Stripe.apiKey = propertiesProvider.getProperty("apiKey")
-            String customerId = getCustomerIdFromAuthentication(authentication)
-            Subscription subscription = getSubscriptionFromCustomerId(customerId)
-            subscription.cancel()
-            return true
-        } catch (Exception e) {
-            log.error("Unable to cancel subscription", e)
+        Stripe.apiKey = propertiesProvider.getProperty("apiKey")
+        String customerId = getCustomerIdFromAuthentication(authentication)
+        Subscription subscription = getSubscriptionFromCustomerId(customerId)
+        subscription.cancel()
+        return true
+    }
+
+    private static BillingEvent findByBillingId(Repository<BillingEvent> repository, String billingId) {
+        if (!billingId) {
+            return null
         }
-        return false
+        ComplexFilter complexFilter = new FilterBuilder().addFilter(new SimpleFilter("billingId", FilterConstants.OPERATOR_EQUAL, billingId)).build()
+        List<BillingEvent> matches = repository.filter(complexFilter)
+        return matches ? matches[0] : null
     }
 
     private String getCustomerIdFromAuthentication(Authentication authentication) {
@@ -147,14 +156,17 @@ class StoreBillingEventService implements BillingEventService {
     }
 
     private String getInternalToken(String tenantId) {
-        try {
-            SecureHttpClient secureHttpClient = new SecureHttpClientBase(singletonClient, new ObtainTokenFromAuthServiceFromPropertiesFile()) {}
-            String subject = propertiesProvider.getProperty("clientId")
-            InternalTokenRequest tokenRequest = new InternalTokenRequest(subject: subject, tenantId: tenantId)
-            return secureHttpClient.post("https://auth.trevorism.com/token/internal", gson.toJson(tokenRequest))
-        } catch (Exception e) {
-            log.error("Unable to get token", e)
+        SecureHttpClient secureHttpClient = new SecureHttpClientBase(singletonClient, createAuthServiceTokenStrategy()) {}
+        String subject = propertiesProvider.getProperty("clientId")
+        InternalTokenRequest tokenRequest = new InternalTokenRequest(subject: subject, tenantId: tenantId)
+        String token = secureHttpClient.post("https://auth.trevorism.com/token/internal", gson.toJson(tokenRequest))
+        if (!token) {
+            throw new IllegalStateException("Unable to get an internal token for tenant ${tenantId}")
         }
-        return null
+        return token
+    }
+
+    private ObtainTokenFromAuthServiceFromParameter createAuthServiceTokenStrategy() {
+        new ObtainTokenFromAuthServiceFromParameter(propertiesProvider.getProperty("clientId"), propertiesProvider.getProperty("clientSecret"))
     }
 }

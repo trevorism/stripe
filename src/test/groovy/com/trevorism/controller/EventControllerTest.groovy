@@ -4,6 +4,8 @@ import com.trevorism.PropertiesProvider
 import com.trevorism.model.BillingEvent
 import com.trevorism.service.BillingEventService
 import io.micronaut.http.HttpRequest
+import io.micronaut.http.HttpStatus
+import io.micronaut.http.exceptions.HttpStatusException
 import org.junit.jupiter.api.Test
 
 import javax.crypto.Mac
@@ -58,7 +60,8 @@ class EventControllerTest {
         try {
             controller.processStripeEvent(HttpRequest.POST("/api/billing/webhook", payload))
             assert false
-        } catch (RuntimeException e) {
+        } catch (HttpStatusException e) {
+            assert e.status == HttpStatus.BAD_REQUEST
             assert e.message.contains("invalid signature")
         }
         assert recorded.isEmpty()
@@ -75,7 +78,8 @@ class EventControllerTest {
             controller.processStripeEvent(
                     HttpRequest.POST("/api/billing/webhook", tampered).header("Stripe-Signature", signature))
             assert false
-        } catch (RuntimeException e) {
+        } catch (HttpStatusException e) {
+            assert e.status == HttpStatus.BAD_REQUEST
             assert e.message.contains("invalid signature")
         }
         assert recorded.isEmpty()
@@ -91,10 +95,55 @@ class EventControllerTest {
             controller.processStripeEvent(
                     HttpRequest.POST("/api/billing/webhook", payload).header("Stripe-Signature", foreignSignature))
             assert false
-        } catch (RuntimeException e) {
+        } catch (HttpStatusException e) {
+            assert e.status == HttpStatus.BAD_REQUEST
             assert e.message.contains("invalid signature")
         }
         assert recorded.isEmpty()
+    }
+
+    @Test
+    void testMalformedSignatureHeaderIsRejectedAsBadRequest() {
+        EventController controller = buildController()
+        String payload = eventPayload(subscriptionSession())
+
+        try {
+            controller.processStripeEvent(
+                    HttpRequest.POST("/api/billing/webhook", payload).header("Stripe-Signature", "not-a-stripe-signature"))
+            assert false
+        } catch (HttpStatusException e) {
+            assert e.status == HttpStatus.BAD_REQUEST
+        }
+        assert recorded.isEmpty()
+    }
+
+    @Test
+    void testMissingWebhookSecretIsAServerErrorNotABadRequest() {
+        EventController controller = buildController()
+        controller.propertiesProvider = [getProperty: { String key -> null }] as PropertiesProvider
+
+        try {
+            controller.processStripeEvent(signedRequest(eventPayload(subscriptionSession())))
+            assert false
+        } catch (IllegalStateException e) {
+            assert e.message.contains("not configured")
+        }
+        assert recorded.isEmpty()
+    }
+
+    @Test
+    void testStorageFailurePropagatesSoStripeRetriesTheEvent() {
+        EventController controller = buildController()
+        controller.billingEventService = [processBillingEvent: { BillingEvent event ->
+            throw new RuntimeException("datastore unavailable")
+        }] as BillingEventService
+
+        try {
+            controller.processStripeEvent(signedRequest(eventPayload(subscriptionSession())))
+            assert false
+        } catch (RuntimeException e) {
+            assert e.message == "datastore unavailable"
+        }
     }
 
     private EventController buildController() {

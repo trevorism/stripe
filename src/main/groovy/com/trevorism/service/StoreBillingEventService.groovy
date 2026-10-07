@@ -16,7 +16,7 @@ import com.trevorism.http.HttpClient
 import com.trevorism.http.JsonHttpClient
 import com.trevorism.https.SecureHttpClient
 import com.trevorism.https.SecureHttpClientBase
-import com.trevorism.https.token.ObtainTokenFromAuthServiceFromPropertiesFile
+import com.trevorism.https.token.ObtainTokenFromAuthServiceFromParameter
 import com.trevorism.https.token.ObtainTokenFromParameter
 import com.trevorism.model.BillingEvent
 import com.trevorism.model.BillingSubscription
@@ -156,7 +156,7 @@ class StoreBillingEventService implements BillingEventService {
     }
 
     private String getInternalToken(String tenantId) {
-        SecureHttpClient secureHttpClient = new SecureHttpClientBase(singletonClient, new ObtainTokenFromAuthServiceFromPropertiesFile()) {}
+        SecureHttpClient secureHttpClient = new SecureHttpClientBase(singletonClient, createAuthServiceTokenStrategy()) {}
         String subject = propertiesProvider.getProperty("clientId")
         InternalTokenRequest tokenRequest = new InternalTokenRequest(subject: subject, tenantId: tenantId)
         String token = secureHttpClient.post("https://auth.trevorism.com/token/internal", gson.toJson(tokenRequest))
@@ -164,5 +164,9 @@ class StoreBillingEventService implements BillingEventService {
             throw new IllegalStateException("Unable to get an internal token for tenant ${tenantId}")
         }
         return token
+    }
+
+    private ObtainTokenFromAuthServiceFromParameter createAuthServiceTokenStrategy() {
+        new ObtainTokenFromAuthServiceFromParameter(propertiesProvider.getProperty("clientId"), propertiesProvider.getProperty("clientSecret"))
     }
 }

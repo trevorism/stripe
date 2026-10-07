@@ -7,22 +7,22 @@ Feature: Money-handling guards on the deployed Stripe API
   Scenario: The webhook refuses an unsigned payload
     Given the stripe application is alive
     When an unsigned billing event is posted to the webhook
-    Then the billing request is rejected with status 500
+    Then the billing request is rejected with status 400
 
   Scenario: The webhook refuses a forged signature
     Given the stripe application is alive
     When a billing event with a forged signature is posted to the webhook
-    Then the billing request is rejected with status 500
+    Then the billing request is rejected with status 400
 
   Scenario: A subscription may only be created at the supported price
     Given the stripe application is alive
     When an authenticated caller requests a subscription session at the wrong price
-    Then the billing request is rejected with status 500
+    Then the billing request is rejected with status 400
 
   Scenario: A one time payment below the floor is refused
     Given the stripe application is alive
     When an authenticated caller requests a payment session below the minimum
-    Then the billing request is rejected with status 500
+    Then the billing request is rejected with status 400
 
   Scenario: Subscription details are not readable anonymously
     Given the stripe application is alive

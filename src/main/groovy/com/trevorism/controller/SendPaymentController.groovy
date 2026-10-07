@@ -6,10 +6,12 @@ import com.stripe.param.checkout.SessionCreateParams
 import com.trevorism.PropertiesProvider
 import com.trevorism.model.PaymentRequest
 import io.micronaut.core.annotation.Nullable
+import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Post
+import io.micronaut.http.exceptions.HttpStatusException
 import io.micronaut.security.authentication.Authentication
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -33,7 +35,7 @@ class SendPaymentController {
         Stripe.apiKey = propertiesProvider.getProperty("apiKey")
         if (paymentRequest.dollars < 0.99) {
             log.warn("Failed payment attempt of ${paymentRequest.dollars}")
-            throw new RuntimeException("Unable to process; insufficient funds for payment")
+            throw new HttpStatusException(HttpStatus.BAD_REQUEST, "Unable to process; insufficient funds for payment")
         }
 
         ProductData productData = ProductData.builder().setName(paymentRequest.name).build()

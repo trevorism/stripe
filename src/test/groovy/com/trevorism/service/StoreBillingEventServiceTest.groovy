@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.stripe.model.oauth.TokenResponse
 import com.trevorism.PropertiesProvider
+import com.trevorism.data.exception.DataOperationException
 import com.trevorism.controller.SendPaymentControllerTest
 import com.trevorism.http.HeadersHttpResponse
 import com.trevorism.http.HttpClient
@@ -44,6 +45,36 @@ class StoreBillingEventServiceTest {
         } catch (IllegalArgumentException e) {
             assert e.message == "A return url is required"
         }
+    }
+
+    @Test
+    void testProcessBillingEventRethrowsWhenTheEventCannotBeStored() {
+        StoreBillingEventService storeBillingEventService = new StoreBillingEventService()
+        storeBillingEventService.propertiesProvider = [getProperty: {key -> "x"}] as PropertiesProvider
+        storeBillingEventService.singletonClient = createDatastoreFailingHttpClient()
+
+        try {
+            storeBillingEventService.processBillingEvent(createSampleBillingEvent())
+            assert false
+        } catch (DataOperationException e) {
+            assert e.message.contains("billingevent")
+        }
+    }
+
+    private static HttpClient createDatastoreFailingHttpClient() {
+        String tokenJson = new Gson().toJson(new TokenResponse())
+        Closure<String> respond = { String url ->
+            if (url.contains("datastore")) {
+                throw new RuntimeException("datastore unavailable")
+            }
+            return tokenJson
+        }
+        return [
+                post: { String url, String body, Map<String, String> headers = null ->
+                    String response = respond(url)
+                    return headers == null ? response : new HeadersHttpResponse(response, headers)
+                }
+        ] as HttpClient
     }
 
     private static createTestHttpClient(){

@@ -44,9 +44,9 @@ class StoreBillingEventService implements BillingEventService {
             Repository<BillingEvent> repository = createBillingEventRepository(event.tenantId)
             return repository.create(event)
         } catch (Exception e) {
-            log.error("Unable to process billing event", e)
+            log.error("Unable to process billing event ${event?.billingId}", e)
+            throw e
         }
-        return null
     }
 
     @Override

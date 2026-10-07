@@ -15,17 +15,18 @@ import com.trevorism.secure.Roles
 import com.trevorism.secure.Secure
 import com.trevorism.service.BillingEventService
 import io.micronaut.http.HttpRequest
+import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Delete
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.Post
+import io.micronaut.http.exceptions.HttpStatusException
 import io.micronaut.security.authentication.Authentication
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.inject.Inject
-import org.apache.hc.client5.http.HttpResponseException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import static com.stripe.param.checkout.SessionCreateParams.LineItem.PriceData.*
@@ -48,7 +49,7 @@ class SubscriptionController {
     Map createSession(@Body PaymentRequest paymentRequest, Authentication authentication) {
         Stripe.apiKey = propertiesProvider?.getProperty("apiKey")
         if (paymentRequest.dollars != 10.00d) {
-            throw new RuntimeException("Unable to process; insufficient funds for payment")
+            throw new HttpStatusException(HttpStatus.BAD_REQUEST, "Unable to process; insufficient funds for payment")
         }
 
         ProductData productData = ProductData.builder().setName(paymentRequest.name).build()
@@ -88,7 +89,7 @@ class SubscriptionController {
         try{
             return billingEventService.getSubscription(authentication)
         }catch (Exception e){
-            throw new HttpResponseException(404, e.message)
+            throw new HttpStatusException(HttpStatus.NOT_FOUND, e.message)
         }
     }
 
@@ -98,13 +99,13 @@ class SubscriptionController {
     @Secure(Roles.SYSTEM)
     BillingSubscription getSubscriptionForCustomer(String customerId) {
         if (!customerId?.trim()) {
-            throw new HttpResponseException(400, "A stripe customer id is required")
+            throw new HttpStatusException(HttpStatus.BAD_REQUEST, "A stripe customer id is required")
         }
         try {
             return billingEventService.getSubscriptionForCustomer(customerId)
         } catch (Exception e) {
             log.error("Unable to look up subscription for customer ${customerId}", e)
-            throw new HttpResponseException(404, "Unable to look up subscription")
+            throw new HttpStatusException(HttpStatus.NOT_FOUND, "Unable to look up subscription")
         }
     }
 
@@ -125,7 +126,7 @@ class SubscriptionController {
             return billingEventService.createPortalSession(authentication, portalRequest?.returnUrl)
         } catch (Exception e) {
             log.error("Unable to create a billing portal session", e)
-            throw new HttpResponseException(400, "Unable to create a billing portal session")
+            throw new HttpStatusException(HttpStatus.BAD_REQUEST, "Unable to create a billing portal session")
         }
     }
 

@@ -4,8 +4,9 @@ import com.stripe.model.Subscription
 import com.trevorism.model.BillingSubscription
 import com.trevorism.model.PortalRequest
 import com.trevorism.service.BillingEventService
+import io.micronaut.http.HttpStatus
+import io.micronaut.http.exceptions.HttpStatusException
 import io.micronaut.security.authentication.Authentication
-import org.apache.hc.client5.http.HttpResponseException
 import org.junit.jupiter.api.Test
 
 class SubscriptionControllerTest {
@@ -54,9 +55,9 @@ class SubscriptionControllerTest {
         try {
             controller.getSubscriptionForCustomer("cus_missing")
             assert false
-        } catch (HttpResponseException e) {
-            assert e.statusCode == 404
-            assert e.reasonPhrase == "Unable to look up subscription"
+        } catch (HttpStatusException e) {
+            assert e.status == HttpStatus.NOT_FOUND
+            assert e.message == "Unable to look up subscription"
             assert !e.message.contains("sk_live_secret")
         }
     }
@@ -71,8 +72,8 @@ class SubscriptionControllerTest {
         try {
             controller.getSubscriptionForCustomer("   ")
             assert false
-        } catch (HttpResponseException e) {
-            assert e.statusCode == 400
+        } catch (HttpStatusException e) {
+            assert e.status == HttpStatus.BAD_REQUEST
         }
     }
 
@@ -110,8 +111,8 @@ class SubscriptionControllerTest {
         try {
             controller.createPortalSession(new PortalRequest(), { } as Authentication)
             assert false
-        } catch (HttpResponseException e) {
-            assert e.statusCode == 400
+        } catch (HttpStatusException e) {
+            assert e.status == HttpStatus.BAD_REQUEST
             assert !e.message.contains("sk_live_secret")
         }
     }
